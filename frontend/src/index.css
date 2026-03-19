@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply text-slate-800 bg-slate-50 antialiased;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-brand-200 rounded-full hover:bg-brand-300 transition-colors;
+  }
+
+  /* Selection Color */
+  ::selection {
+    @apply bg-brand-200 text-brand-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition shadow-sm hover:shadow active:scale-95;
+  }
+
+  .card {
+    @apply bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none;
+  }
+
+  /* Glassmorphism Classes */
+  .glass {
+    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl;
+  }
+
+  .glass-dark {
+    @apply bg-brand-900/60 backdrop-blur-xl border border-white/10 shadow-2xl;
+  }
+
+  /* Premium Gradients */
+  .grad-brand {
+    @apply bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700;
+  }
+
+  .grad-warm {
+    @apply bg-gradient-to-br from-orange-400 via-rose-500 to-fuchsia-600;
+  }
+
+  .grad-cool {
+    @apply bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600;
+  }
+
+  .grad-emerald {
+    @apply bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600;
+  }
+
+  /* Premium Shadows */
+  .shadow-premium {
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+  }
+
+  .shadow-brand-hover {
+    @apply transition-all duration-300 hover:shadow-[0_20px_40px_rgba(8, _112, _184, _0.3)];
+  }
+}
