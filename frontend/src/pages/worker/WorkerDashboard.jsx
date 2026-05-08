@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { workerAPI } from '../../lib/api';
+import { workerAPI, mlAPI } from '../../lib/api';
 import { useAuthStore } from '../../store/authStore.js';
 import { connectSocket, joinWorkerRoom } from '../../lib/socket.js';
 
@@ -9,6 +9,40 @@ export default function WorkerDashboard() {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('assigned'); // assigned, in-progress, resolved
+    const [optimizedRoute, setOptimizedRoute] = useState(null);
+    const [optimizing, setOptimizing] = useState(false);
+
+    const handleOptimizeRoute = async () => {
+        const assignedTasks = tasks.filter(t => t.status === 'assigned');
+        if (assignedTasks.length === 0) {
+            alert("No pending tasks to optimize.");
+            return;
+        }
+
+        setOptimizing(true);
+        try {
+            const hotspots = assignedTasks.map(t => ({
+                id: t._id,
+                lat: t.location?.coordinates?.[1] || 28.6139,
+                lng: t.location?.coordinates?.[0] || 77.2090,
+                severity: t.severity || 5
+            }));
+
+            const start_lat = 28.6139;
+            const start_lng = 77.2090;
+
+            const response = await mlAPI.optimizeRoute({ hotspots, start_lat, start_lng });
+            if (response.data && response.data.optimized_route) {
+                setOptimizedRoute(response.data);
+            }
+        } catch (error) {
+            console.error("Failed to optimize route", error);
+            alert("Failed to calculate AI route. Make sure ML Service is running.");
+        } finally {
+            setOptimizing(false);
+        }
+    };
+
 
     useEffect(() => {
         // Only workers should join worker room
@@ -212,12 +246,58 @@ export default function WorkerDashboard() {
                                 </button>
                             ))}
                         </div>
-                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] italic">
-                            {filteredTasks.length} {filter} Tasks
+                        <div className="flex items-center gap-4">
+                            {filter === 'assigned' && filteredTasks.length > 0 && (
+                                <button
+                                    onClick={handleOptimizeRoute}
+                                    disabled={optimizing}
+                                    className="px-6 py-2.5 grad-brand text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-lg hover:shadow-brand-500/50 transition-all flex items-center gap-2 disabled:opacity-70"
+                                >
+                                    {optimizing ? 'Calculating...' : '🤖 AI Optimize Route'}
+                                </button>
+                            )}
+                            <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] italic">
+                                {filteredTasks.length} {filter} Tasks
+                            </div>
                         </div>
                     </div>
 
                     <div className="p-8">
+                        {optimizedRoute && filter === 'assigned' && (
+                            <div className="mb-8 bg-brand-50 border border-brand-100 rounded-3xl p-6 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500 rounded-full blur-3xl opacity-10"></div>
+                                <h3 className="text-xl font-black text-brand-900 mb-2 flex items-center gap-2">
+                                    <span>🧠</span> Smart Route Generated
+                                </h3>
+                                <div className="flex gap-6 text-sm font-bold text-brand-700 mb-6">
+                                    <span className="flex items-center gap-1">🗺️ {optimizedRoute.total_distance_km}</span>
+                                    <span className="flex items-center gap-1">⏱️ {optimizedRoute.estimated_time_mins}</span>
+                                </div>
+                                <div className="relative pl-2">
+                                    <div className="absolute top-4 left-[19px] bottom-4 w-1 bg-brand-200 rounded-full"></div>
+                                    <div className="space-y-4">
+                                        {optimizedRoute.optimized_route.map((node, idx) => {
+                                            const task = tasks.find(t => t._id === node.id);
+                                            return (
+                                                <div key={idx} className="relative flex items-center gap-6 z-10">
+                                                    <div className="w-6 h-6 rounded-full bg-brand-500 text-white flex items-center justify-center text-xs font-black shadow-md border-2 border-white">
+                                                        {idx + 1}
+                                                    </div>
+                                                    <div className="flex-1 bg-white p-4 rounded-2xl border border-brand-100 shadow-sm flex justify-between items-center hover:shadow-md transition-shadow">
+                                                        <div>
+                                                            <p className="font-black text-gray-800">{task?.address || 'Start Location'}</p>
+                                                            {task && <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-1">Severity: {task.severity}</p>}
+                                                        </div>
+                                                        {task && <Link to={`/worker/task/${task._id}`} className="text-brand-600 font-black text-xl hover:scale-110 transition-transform">➡️</Link>}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {filteredTasks.length === 0 ? (
                             <div className="text-center py-20 bg-gray-50/30 rounded-[2rem] border-2 border-dashed border-gray-100">
                                 <div className="text-6xl mb-6">🌈</div>

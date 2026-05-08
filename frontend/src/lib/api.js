@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const ML_API_URL = import.meta.env.VITE_ML_API_URL || 'http://localhost:8000';
 
 // Create axios instance
 const api = axios.create({
@@ -9,6 +10,14 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+const mlApi = axios.create({
+  baseURL: `${ML_API_URL}/api`,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 
 // Add token to requests
 api.interceptors.request.use(
@@ -92,6 +101,11 @@ export const analyticsAPI = {
   getPredictions: () => api.get('/analytics/predictions'),
   getLeaderboard: () => api.get('/analytics/leaderboard'),
   getWorkerPerformance: () => api.get('/analytics/worker-performance'),
+};
+
+// ML Engine API
+export const mlAPI = {
+  optimizeRoute: (data) => mlApi.post('/optimize-route', data),
 };
 
 export default api;

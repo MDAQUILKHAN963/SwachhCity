@@ -144,7 +144,7 @@ function Dashboard() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-white z-10">
             <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-brand-200">
-              City Dashboard
+              Citizen Dashboard
             </h1>
             <p className="text-brand-100 text-lg font-light max-w-md">
               Track your impact. Every report creates a cleaner environment for everyone.
