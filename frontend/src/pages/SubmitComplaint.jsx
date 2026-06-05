@@ -54,6 +54,9 @@ function SubmitComplaint() {
     try {
       const analysisFormData = new FormData();
       analysisFormData.append('image', file);
+      if (formData.description) {
+        analysisFormData.append('description', formData.description);
+      }
       const response = await complaintAPI.analyze(analysisFormData);
       if (response.data.success) {
         setAiAnalysis(response.data.data);
@@ -400,6 +403,27 @@ function SubmitComplaint() {
                             </div>
                           </div>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Brands + semantic verification */}
+                    {!analyzing && aiAnalysis && (aiAnalysis.brands?.length > 0 || aiAnalysis.verification?.reason) && (
+                      <div className="mt-6 space-y-3">
+                        {aiAnalysis.verification?.reason && (
+                          <div className={`p-3 rounded-2xl border text-xs font-bold ${aiAnalysis.verification.verified ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
+                            <span className="mr-1">{aiAnalysis.verification.verified ? '✅' : '⚠️'}</span>
+                            {aiAnalysis.verification.reason}
+                          </div>
+                        )}
+                        {aiAnalysis.brands?.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {aiAnalysis.brands.map((b, i) => (
+                              <span key={i} className="px-3 py-1.5 bg-purple-50 border border-purple-100 text-purple-700 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                                <span>🏭</span> {b.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 

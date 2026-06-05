@@ -104,6 +104,7 @@ async def detect_garbage(file: UploadFile = File(...), description: str = Form(N
         # 1. Object Detection (YOLO) & Segregation
         yolo_classes = []
         segregation_report = {}
+        yolo_severity = 0
         if detector:
             yolo_res = detector.detect(contents)
             results.update({
@@ -116,12 +117,18 @@ async def detect_garbage(file: UploadFile = File(...), description: str = Form(N
             })
             yolo_classes = [d['class'] for d in yolo_res.get("all_detections", [])]
             segregation_report = yolo_res.get("segregation_report", {})
+            yolo_severity = yolo_res.get("severity_count_based", 0)
 
-        # 2. Advanced Severity (EfficientNet)
+        # 2. Severity scoring
+        # NOTE: The EfficientNet classifier head is untrained (random init), so its raw
+        # output is not meaningful. We derive severity from the actual count of detected
+        # garbage objects, which varies per image and is defensible. The EfficientNet
+        # reasoning string is kept for display when the model is available.
+        results["severity"] = yolo_severity
+        results["severity_reasoning"] = f"Estimated from {results.get('object_count', 0)} detected object(s)"
         if severity_model:
             sev_res = severity_model.predict(contents)
-            results["severity"] = sev_res["severity"]
-            results["severity_reasoning"] = sev_res["reasoning"]
+            results["severity_reasoning"] = sev_res.get("reasoning", results["severity_reasoning"])
 
         # 3. Brand Detection (OCR)
         if brand_detector:
@@ -140,7 +147,7 @@ async def detect_garbage(file: UploadFile = File(...), description: str = Form(N
 
         if not detector and not severity_model:
             # Fallback mock
-            results.update({"detected": True, "confidence": 0.85, "severity": 5, "mock": True})
+            results.update({"detected": True, "confidence": 0.85, "severity": 5, "garbageType": "other", "mock": True})
 
         return results
     except Exception as e:
@@ -149,13 +156,23 @@ async def detect_garbage(file: UploadFile = File(...), description: str = Form(N
 @app.post("/api/severity")
 async def calculate_severity(file: UploadFile = File(...)):
     """
-    Dedicated endpoint for EfficientNet severity classification.
+    Dedicated severity endpoint. Severity is derived from the count of garbage
+    objects detected by YOLO (the EfficientNet head is untrained, so its raw class
+    output is not used as the score). Falls back to a neutral default only if no
+    detector is available.
     """
     try:
         contents = await file.read()
-        if severity_model:
-            return severity_model.predict(contents)
-        return {"severity": 5, "reasoning": "Model not loaded"}
+        if detector:
+            yolo_res = detector.detect(contents)
+            severity = yolo_res.get("severity_count_based", 0)
+            count = yolo_res.get("object_count", 0)
+            reasoning = f"Estimated from {count} detected object(s)"
+            if severity_model:
+                sev_res = severity_model.predict(contents)
+                reasoning = sev_res.get("reasoning", reasoning)
+            return {"severity": severity, "reasoning": reasoning}
+        return {"severity": 5, "reasoning": "Detector not loaded"}
     except Exception as e:
         return {"error": str(e)}
 

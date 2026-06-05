@@ -39,17 +39,41 @@ export const submitComplaint = async (req, res) => {
     const imagePath = req.file.path;
     let imageUrl = `/uploads/${req.file.filename}`;
 
-    // Call ML service for garbage detection
-    const mlResult = await detectGarbage(imagePath);
+    // Call ML service for garbage detection (description enables semantic verification)
+    const mlResult = await detectGarbage(imagePath, description);
 
-    if (!mlResult.detected && mlResult.success) {
-      // ML detected no garbage - reject complaint
+    // Normalize OCR brand shape (ML returns matched_text → store as matchedText)
+    const brands = (mlResult.brands || []).map((b) => ({
+      name: b.name,
+      matchedText: b.matched_text || b.matchedText || '',
+      confidence: b.confidence || 0
+    }));
+
+    // Graceful detection handling:
+    // The detector is base YOLOv8 (COCO), which reliably finds bottles/cups/cans/e-waste
+    // but can miss amorphous trash piles. So we do NOT hard-reject merely because nothing
+    // was detected — that would block legitimate citizen reports. We only reject when the
+    // semantic verification explicitly contradicts the report (a clear non-garbage image
+    // submitted alongside a description). Otherwise the complaint is accepted as 'pending'
+    // and flagged for manual verification (it is not auto-assigned).
+    const explicitlyNotGarbage =
+      mlResult.success &&
+      !mlResult.detected &&
+      mlResult.verification &&
+      mlResult.verification.verified === false;
+
+    if (explicitlyNotGarbage) {
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
       return res.status(400).json({
         success: false,
-        message: 'No garbage detected in the image. Please upload a clear image showing garbage.',
+        message: 'The image does not appear to show garbage and does not match your description. Please upload a clear photo of the garbage.',
         mlConfidence: mlResult.confidence
       });
     }
+
+    const needsManualReview = !mlResult.detected;
 
     // Calculate severity
     const severityResult = await calculateSeverity(imagePath);
@@ -87,11 +111,18 @@ export const submitComplaint = async (req, res) => {
       estimatedCleanupTime: estimatedCleanupTime || 24,
       mlVerified: mlResult.success && mlResult.detected,
       mlConfidence: mlResult.confidence || 0.5,
+      objectCount: mlResult.objectCount || 0,
+      segregation: mlResult.segregation || {},
+      brands,
+      corporateAccountability: mlResult.corporateAccountability || false,
+      verification: mlResult.verification || undefined,
       isAnonymous: isAnonymous === 'true' || isAnonymous === true,
       statusHistory: [{
         status: mlResult.detected ? 'verified' : 'pending',
         changedAt: new Date(),
-        notes: mlResult.detected ? 'AI Verified' : 'Awaiting verification'
+        notes: mlResult.detected
+          ? 'AI Verified'
+          : 'AI could not auto-confirm garbage — flagged for manual verification'
       }]
     });
 
@@ -152,7 +183,10 @@ export const submitComplaint = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Complaint submitted successfully',
+      message: needsManualReview
+        ? 'Complaint submitted — our team will manually verify the garbage in your photo.'
+        : 'Complaint submitted successfully',
+      needsManualReview,
       data: {
         complaint: {
           id: complaint._id,
@@ -267,10 +301,11 @@ export const analyzeComplaint = async (req, res) => {
     }
 
     const imagePath = req.file.path;
+    const { description } = req.body;
 
-    // Call ML services
+    // Call ML services (description enables semantic verification)
     const [mlResult, severityResult] = await Promise.all([
-      detectGarbage(imagePath),
+      detectGarbage(imagePath, description),
       calculateSeverity(imagePath)
     ]);
 
@@ -289,6 +324,11 @@ export const analyzeComplaint = async (req, res) => {
         severity: severity,
         garbageType: mlResult.garbageType || 'unknown',
         reasoning: severityResult.reasoning || 'AI analysis complete',
+        objectCount: mlResult.objectCount || 0,
+        segregation: mlResult.segregation || {},
+        brands: mlResult.brands || [],
+        corporateAccountability: mlResult.corporateAccountability || false,
+        verification: mlResult.verification || null,
         estimatedCleanupTime: Math.max(2, Math.round(severity * 0.8)) // Simple estimate: 2 to 8 hours
       }
     });

@@ -34,7 +34,10 @@ Thumbs.db
 *.onnx
 *.pkl
 *.h5
-models/
+# Trained-weight folders only. Anchored patterns so this does NOT match
+# ml-service/app/models/, which is ML model SOURCE code that must be committed.
+/models/
+ml-service/models/
 dataset/
 
 # Database

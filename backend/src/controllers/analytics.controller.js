@@ -214,7 +214,7 @@ export const getLeaderboard = async (req, res) => {
 export const getPredictedHotspots = async (req, res) => {
     try {
         // Call Python ML Service
-        const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:8001';
+        const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:8000';
         const response = await axios.get(`${mlServiceUrl}/api/predict-hotspots`);
 
         if (response.data.success) {

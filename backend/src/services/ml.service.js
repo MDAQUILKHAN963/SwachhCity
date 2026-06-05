@@ -3,13 +3,17 @@ import axios from 'axios';
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 
 // Call ML service for garbage detection
-export const detectGarbage = async (imagePath) => {
+// `description` (optional) enables the ML semantic verification (text vs image consistency).
+export const detectGarbage = async (imagePath, description = null) => {
   try {
     const FormData = require('form-data');
     const fs = require('fs');
     const formData = new FormData();
-    
+
     formData.append('file', fs.createReadStream(imagePath));
+    if (description) {
+      formData.append('description', description);
+    }
 
     const response = await axios.post(
       `${ML_SERVICE_URL}/api/detect`,
@@ -28,11 +32,16 @@ export const detectGarbage = async (imagePath) => {
       confidence: response.data.confidence || 0,
       severity: response.data.severity || 0,
       garbageType: response.data.garbageType || 'unknown',
-      boundingBoxes: response.data.bounding_boxes || []
+      boundingBoxes: response.data.bounding_boxes || [],
+      objectCount: response.data.object_count || 0,
+      segregation: response.data.segregation || {},
+      brands: response.data.brands || [],
+      corporateAccountability: response.data.corporate_accountability || false,
+      verification: response.data.verification || null
     };
   } catch (error) {
     console.error('ML Service Error:', error.message);
-    
+
     // Fallback: if ML service is not available, return default values
     // In production, you might want to reject the complaint or queue it for later processing
     return {
@@ -42,6 +51,11 @@ export const detectGarbage = async (imagePath) => {
       severity: 5,
       garbageType: 'unknown',
       boundingBoxes: [],
+      objectCount: 0,
+      segregation: {},
+      brands: [],
+      corporateAccountability: false,
+      verification: null,
       error: error.message
     };
   }

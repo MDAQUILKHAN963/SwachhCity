@@ -159,6 +159,87 @@ const ComplaintDetail = () => {
                             </div>
                         </div>
 
+                        {/* AI Smart Insights (segregation / brands / verification) */}
+                        {(() => {
+                            const seg = complaint.segregation
+                                ? (complaint.segregation instanceof Map
+                                    ? Object.fromEntries(complaint.segregation)
+                                    : complaint.segregation)
+                                : {};
+                            const segEntries = Object.entries(seg).filter(([, v]) => v > 0);
+                            const brands = complaint.brands || [];
+                            const verification = complaint.verification;
+                            const hasInsights = segEntries.length > 0 || brands.length > 0 || (verification && verification.reason);
+                            if (!hasInsights) return null;
+
+                            const segMeta = {
+                                organic: { icon: '🍃', label: 'Organic', color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
+                                recyclable: { icon: '♻️', label: 'Recyclable', color: 'text-blue-600 bg-blue-50 border-blue-100' },
+                                hazardous: { icon: '☢️', label: 'Hazardous', color: 'text-red-600 bg-red-50 border-red-100' },
+                                other: { icon: '🗑️', label: 'Other', color: 'text-gray-600 bg-gray-50 border-gray-100' },
+                            };
+
+                            return (
+                                <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-premium border border-white p-8">
+                                    <h3 className="text-xl font-black text-gray-800 tracking-tight mb-8 flex items-center gap-3">
+                                        <span className="p-2 bg-brand-50 rounded-xl">🧠</span>
+                                        AI Smart Insights
+                                    </h3>
+
+                                    {/* Semantic verification badge */}
+                                    {verification && verification.reason && (
+                                        <div className={`mb-6 p-4 rounded-2xl border ${verification.verified ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span>{verification.verified ? '✅' : '⚠️'}</span>
+                                                <p className={`text-[10px] font-black uppercase tracking-widest ${verification.verified ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                                    {verification.verified ? 'Description Verified' : 'Flagged for Review'}
+                                                    {typeof verification.confidence === 'number' && ` · ${Math.round(verification.confidence * 100)}% match`}
+                                                </p>
+                                            </div>
+                                            <p className="text-xs text-gray-600 font-medium">{verification.reason}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Waste segregation */}
+                                    {segEntries.length > 0 && (
+                                        <div className="mb-6">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Waste Segregation</p>
+                                            <div className="flex flex-wrap gap-3">
+                                                {segEntries.map(([key, count]) => {
+                                                    const meta = segMeta[key] || segMeta.other;
+                                                    return (
+                                                        <div key={key} className={`px-4 py-2 rounded-2xl border flex items-center gap-2 ${meta.color}`}>
+                                                            <span>{meta.icon}</span>
+                                                            <span className="text-xs font-black tracking-tight">{meta.label}</span>
+                                                            <span className="text-xs font-black opacity-70">×{count}</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Brand / corporate accountability */}
+                                    {brands.length > 0 && (
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Brands Detected (Corporate Accountability)</p>
+                                            <div className="flex flex-wrap gap-3">
+                                                {brands.map((b, i) => (
+                                                    <div key={i} className="px-4 py-2 rounded-2xl border border-purple-100 bg-purple-50 flex items-center gap-2">
+                                                        <span>🏭</span>
+                                                        <span className="text-xs font-black text-purple-700 tracking-tight">{b.name}</span>
+                                                        {typeof b.confidence === 'number' && (
+                                                            <span className="text-[10px] font-black text-purple-400">{Math.round(b.confidence * 100)}%</span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
+
                         {/* Visual Progress Timeline */}
                         <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-premium border border-white p-8">
                             <h3 className="text-xl font-black text-gray-800 tracking-tight mb-10 flex items-center gap-3">

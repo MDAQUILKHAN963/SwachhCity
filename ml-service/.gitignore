@@ -11,7 +11,10 @@ ENV/
 *.onnx
 *.pkl
 *.h5
-models/
+# Trained model WEIGHTS folder only (anchored to ml-service root with a leading
+# slash). It must stay anchored so it does NOT match app/models/, which holds the
+# ML model SOURCE code that the service imports.
+/models/
 dataset/
 *.log
 .DS_Store
