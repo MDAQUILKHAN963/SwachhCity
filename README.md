@@ -40,10 +40,9 @@ A comprehensive civic sense web application for managing garbage complaints with
 
 ```
 swachhcity1/
-├── frontend/          # React.js frontend
-├── backend/           # Express.js backend
-├── ml-service/        # FastAPI ML service
-└── PROJECT_ROADMAP.md # Detailed roadmap
+├── frontend/     # React.js frontend
+├── backend/      # Express.js backend
+└── ml-service/   # FastAPI ML service
 ```
 
 ## 🚦 Getting Started
@@ -112,9 +111,9 @@ PORT=8000
 MODEL_PATH=./models/yolov8_garbage.pt
 ```
 
-## 🎯 Development Roadmap
+## 🚢 Deployment
 
-See [PROJECT_ROADMAP.md](./PROJECT_ROADMAP.md) for detailed phase-by-phase breakdown.
+See [DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md) for containerized deployment instructions.
 
 ## 📄 License
 
