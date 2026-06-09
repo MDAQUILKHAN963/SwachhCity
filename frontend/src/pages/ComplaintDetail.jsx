@@ -17,7 +17,7 @@ L.Icon.Default.mergeOptions({
 const ComplaintDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user, logout } = useAuthStore();
+    const { logout } = useAuthStore();
     const [complaint, setComplaint] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -79,6 +79,17 @@ const ComplaintDetail = () => {
     }
 
     const timelineSteps = getStatusSteps(complaint.status);
+
+    // Map the stored priority score to a label. The score may be on a 0-1 (ML) or
+    // 0-10 (fallback) scale, so normalize before bucketing.
+    const getPriorityInfo = (p) => {
+        if (p == null) return { label: 'Medium', color: 'text-amber-600' };
+        const score = p <= 1 ? p * 10 : p;
+        if (score >= 7) return { label: 'High', color: 'text-red-600' };
+        if (score >= 4) return { label: 'Medium', color: 'text-amber-600' };
+        return { label: 'Low', color: 'text-emerald-600' };
+    };
+    const priorityInfo = getPriorityInfo(complaint.priority);
 
     return (
         <div className="min-h-screen bg-brand-50/50 pb-20">
@@ -149,7 +160,7 @@ const ComplaintDetail = () => {
                                     </div>
                                     <div className="p-4 bg-gray-50 rounded-3xl border border-gray-100">
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Priority</p>
-                                        <p className="text-xl font-black text-amber-600 tracking-tighter italic">High</p>
+                                        <p className={`text-xl font-black tracking-tighter italic ${priorityInfo.color}`}>{priorityInfo.label}</p>
                                     </div>
                                     <div className="p-4 bg-brand-50 rounded-3xl border border-brand-100">
                                         <p className="text-[10px] font-black text-brand-600 uppercase tracking-widest leading-none mb-1">Target Cleanup</p>

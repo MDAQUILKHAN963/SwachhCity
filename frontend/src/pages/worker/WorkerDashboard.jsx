@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { workerAPI, mlAPI } from '../../lib/api';
 import { useAuthStore } from '../../store/authStore.js';
 import { connectSocket, joinWorkerRoom } from '../../lib/socket.js';
 
 export default function WorkerDashboard() {
+    const navigate = useNavigate();
     const { user, token, logout } = useAuthStore();
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -32,8 +33,10 @@ export default function WorkerDashboard() {
             const start_lng = 77.2090;
 
             const response = await mlAPI.optimizeRoute({ hotspots, start_lat, start_lng });
-            if (response.data && response.data.optimized_route) {
-                setOptimizedRoute(response.data);
+            // ML service responds as { success, data: { optimized_route, total_distance_km, ... } }
+            const routeData = response.data?.data || response.data;
+            if (routeData && routeData.optimized_route) {
+                setOptimizedRoute(routeData);
             }
         } catch (error) {
             console.error("Failed to optimize route", error);
@@ -339,7 +342,7 @@ export default function WorkerDashboard() {
                                                 )}
 
                                                 <p className="text-gray-400 text-sm font-medium line-clamp-2 leading-relaxed italic opacity-80">
-                                                    "{task.description || 'No additional details provided.'}"
+                                                    &ldquo;{task.description || 'No additional details provided.'}&rdquo;
                                                 </p>
                                             </div>
 
