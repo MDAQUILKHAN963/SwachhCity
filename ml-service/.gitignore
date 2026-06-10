@@ -16,5 +16,9 @@ ENV/
 # ML model SOURCE code that the service imports.
 /models/
 dataset/
+# Training artifacts (dataset copies, downloads, logs)
+downloads/
+trashnet_cls/
+train.err
 *.log
 .DS_Store

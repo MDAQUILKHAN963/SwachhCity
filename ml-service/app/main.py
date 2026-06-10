@@ -34,6 +34,13 @@ if not enable_mock:
 else:
     print("⚠️  Using Mock Detection (ENABLE_MOCK_ML=true)")
 
+waste_classifier = None
+try:
+    from app.models.waste_classifier import WasteClassifier
+    waste_classifier = WasteClassifier()
+except Exception as e:
+    print(f"Waste classifier not loaded (train it to enable typed classification): {e}")
+
 try:
     from app.models.predictor import GarbagePredictor
     predictor = GarbagePredictor()
@@ -118,6 +125,20 @@ async def detect_garbage(file: UploadFile = File(...), description: str = Form(N
             yolo_classes = [d['class'] for d in yolo_res.get("all_detections", [])]
             segregation_report = yolo_res.get("segregation_report", {})
             yolo_severity = yolo_res.get("severity_count_based", 0)
+
+        # 1b. Waste TYPE classification (TrashNet model). Always yields a category,
+        # so garbageType is never 'unknown' just because COCO detected no object.
+        if waste_classifier:
+            try:
+                cls_res = waste_classifier.classify(contents)
+                results["garbageType"] = cls_res["wasteType"]
+                results["wasteClass"] = cls_res["rawClass"]
+                results["wasteClassConfidence"] = cls_res["confidence"]
+                # If the classifier is confident there's identifiable waste, treat as detected
+                if cls_res["confidence"] >= 0.5:
+                    results["detected"] = True
+            except Exception as e:
+                print(f"Waste classification error: {e}")
 
         # 2. Severity scoring
         # NOTE: The EfficientNet classifier head is untrained (random init), so its raw

@@ -1,0 +1,17 @@
+{
+  "top1_accuracy": 0.9291,
+  "top5_accuracy": 1.0,
+  "top1_pct": 92.91,
+  "top5_pct": 100.0,
+  "epochs": 30,
+  "model": "yolov8s-cls.pt",
+  "classes": [
+    "cardboard",
+    "glass",
+    "metal",
+    "paper",
+    "plastic",
+    "trash"
+  ],
+  "best_weights": "C:\\Users\\aquil\\Desktop\\swachhcity1\\ml-service\\trashnet_cls.pt"
+}

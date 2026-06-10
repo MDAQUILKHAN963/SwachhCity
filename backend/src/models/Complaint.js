@@ -49,7 +49,7 @@ const complaintSchema = new mongoose.Schema({
   },
   garbageType: {
     type: String,
-    enum: ['plastic', 'organic', 'electronic', 'metal', 'other', 'unknown'],
+    enum: ['plastic', 'organic', 'electronic', 'metal', 'glass', 'paper', 'cardboard', 'trash', 'other', 'unknown'],
     default: 'unknown'
   },
   estimatedCleanupTime: {
