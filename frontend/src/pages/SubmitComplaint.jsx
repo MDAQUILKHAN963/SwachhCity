@@ -132,7 +132,7 @@ function SubmitComplaint() {
       return false;
     }
     if (!formData.address) {
-      setError('Address resolution failed. Try clicking again.');
+      setError('Please enter the street address or pick a location on the map.');
       return false;
     }
     return true;
@@ -443,9 +443,24 @@ function SubmitComplaint() {
 
             {/* Location Picker */}
             <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">
-                Garbage Location *
-              </label>
+              <div className="flex items-center justify-between mb-4">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  Garbage Location *
+                </label>
+                <select
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl font-black text-[10px] text-gray-700 uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
+                >
+                  <option value="Delhi">Delhi</option>
+                  <option value="Mumbai">Mumbai</option>
+                  <option value="Bangalore">Bangalore</option>
+                  <option value="Chennai">Chennai</option>
+                  <option value="Kolkata">Kolkata</option>
+                  <option value="Hyderabad">Hyderabad</option>
+                </select>
+              </div>
               <div className="rounded-[2rem] overflow-hidden border border-gray-100 shadow-inner h-[400px]">
                 <LocationPicker
                   city={formData.city}
@@ -464,17 +479,20 @@ function SubmitComplaint() {
             {/* Address */}
             <div>
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                Street Address
+                Street Address *
               </label>
               <input
                 type="text"
                 name="address"
                 required
-                readOnly
-                className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all"
-                placeholder="Select location on map..."
+                onChange={handleChange}
+                className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:bg-white transition-all"
+                placeholder="House no., street, area, town... (auto-fills when you pick on the map)"
                 value={formData.address}
               />
+              <p className="mt-2 text-[10px] font-bold text-gray-400 tracking-wide">
+                ✏️ Auto-filled from the map — edit to add house number, street, or landmark for a more precise address.
+              </p>
               {/* Favorite Locations */}
               <div className="flex flex-wrap gap-4 mt-2">
                 <div className="flex-1 min-w-[200px] p-4 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center justify-between group/fav">

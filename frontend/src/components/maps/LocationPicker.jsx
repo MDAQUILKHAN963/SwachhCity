@@ -176,8 +176,10 @@ function LocationPicker({
     };
   }, [nearbyComplaints, showNearby]);
 
-  // Handle location selection
-  const handleLocationSelect = async (lat, lng) => {
+  // Handle location selection.
+  // addressOverride: when the user picked a named search result, keep that
+  // precise address instead of the (often vaguer) reverse-geocoded one.
+  const handleLocationSelect = async (lat, lng, addressOverride = null) => {
     setSelectedLocation({ lat, lng });
     updateMarker(lat, lng);
 
@@ -188,14 +190,15 @@ function LocationPicker({
       });
 
       if (response.data.success) {
-        setAddress(response.data.address);
+        const finalAddress = addressOverride || response.data.address;
+        setAddress(finalAddress);
         setLocationInfo(response.data);
 
         // Notify parent
         onLocationSelect({
           lat,
           lng,
-          address: response.data.address,
+          address: finalAddress,
           city: response.data.city,
           locationImportance: response.data.locationImportance,
           populationDensity: response.data.populationDensity
@@ -203,8 +206,9 @@ function LocationPicker({
       }
     } catch (error) {
       console.error('Reverse geocoding error:', error);
-      setAddress(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-      onLocationSelect({ lat, lng, address: `${lat.toFixed(6)}, ${lng.toFixed(6)}` });
+      const fallback = addressOverride || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      setAddress(fallback);
+      onLocationSelect({ lat, lng, address: fallback });
     }
   };
 
@@ -262,12 +266,21 @@ function LocationPicker({
     return () => clearTimeout(timer);
   }, [searchQuery, searchAddress]);
 
-  // Select search result
+  // Select search result — keep its precise full address
   const selectSearchResult = async (result) => {
     setSearchQuery(result.name);
     setSearchResults([]);
-    await handleLocationSelect(result.lat, result.lng);
+    await handleLocationSelect(result.lat, result.lng, result.fullAddress);
   };
+
+  // Recenter the map when the city changes (only if nothing selected yet)
+  useEffect(() => {
+    if (mapInstanceRef.current && !selectedLocation) {
+      const center = cityCenters[city.toLowerCase()] || cityCenters.bangalore;
+      mapInstanceRef.current.setView(center, 13);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [city]);
 
   useEffect(() => {
     if (onNearbyReportsFound) {
@@ -285,7 +298,7 @@ function LocationPicker({
           </div>
           <input
             type="text"
-            placeholder="Search address or landmark..."
+            placeholder="Search street, area, town, or landmark..."
             className="w-full pl-10 pr-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl font-black text-xs text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

@@ -159,12 +159,24 @@ export const searchPlaces = async (query, cityContext) => {
       params.q = `${query} in ${cityContext}`;
     }
 
-    const response = await axios.get(`${NOMINATIM_BASE_URL}/search`, {
+    let response = await axios.get(`${NOMINATIM_BASE_URL}/search`, {
       params,
       headers: {
         'User-Agent': 'SwachhCity/1.0'
       }
     });
+
+    // Fallback: nothing found within the city — retry across India so users can
+    // search any street, area, or town, not just places in the selected city.
+    if (cityContext && (!response.data || response.data.length === 0)) {
+      await rateLimit();
+      response = await axios.get(`${NOMINATIM_BASE_URL}/search`, {
+        params: { ...params, q: query },
+        headers: {
+          'User-Agent': 'SwachhCity/1.0'
+        }
+      });
+    }
 
     if (response.data) {
       return {
