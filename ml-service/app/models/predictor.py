@@ -102,15 +102,16 @@ class GarbagePredictor:
         return mapping.get(area_type, 0)
 
     def _get_mock_location(self, area_name):
-        # Returns approximate coordinates for demo visually
-        # Center of India approximately
-        base_lat, base_lng = 20.5937, 78.9629
+        # Demo coordinates for each simulated area. Centered on the admin
+        # dashboard's default map view (Bhopal) so predicted hotspots are
+        # visible immediately without panning/zooming.
+        base_lat, base_lng = 23.2599, 77.4126
         offsets = {
-            "Market Area": (0.01, 0.01),
-            "Residential Zone A": (-0.01, -0.01),
-            "Industrial Sector": (0.02, -0.01),
-            "City Park": (-0.01, 0.02),
+            "Market Area": (0.012, 0.015),
+            "Residential Zone A": (-0.015, -0.012),
+            "Industrial Sector": (0.022, -0.018),
+            "City Park": (-0.010, 0.022),
             "Bus Station": (0.0, 0.0)
         }
-        off = offsets.get(area_name, (0,0))
+        off = offsets.get(area_name, (0, 0))
         return {"lat": base_lat + off[0], "lng": base_lng + off[1]}
