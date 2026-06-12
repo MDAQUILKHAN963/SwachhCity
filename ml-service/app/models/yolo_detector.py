@@ -6,16 +6,18 @@ import os
 class YoloDetector:
     def __init__(self, model_path="yolov8n.pt"):
         """
-        Initialize YOLOv8 model.
-        Attempts to load 'trashnet.pt' if available, otherwise defaults to 'yolov8n.pt'.
+        Initialize YOLOv8 model. Loads a custom garbage-trained detector if present
+        ('garbage_detect.pt' from the TACO Colab training, or legacy 'trashnet.pt');
+        otherwise falls back to base COCO 'yolov8n.pt'.
         """
-        custom_model = "trashnet.pt"
-        if os.path.exists(custom_model):
-            print(f"Loading custom TrashNet model from {custom_model}...")
+        custom_candidates = ["garbage_detect.pt", "trashnet.pt"]
+        custom_model = next((m for m in custom_candidates if os.path.exists(m)), None)
+        if custom_model:
+            print(f"Loading custom garbage detection model from {custom_model}...")
             self.model = YOLO(custom_model)
             self.using_custom = True
-            # Mapping for TrashNet (common order: cardboard, glass, metal, paper, plastic, trash)
-            self.class_names = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
+            # Use the class names baked into the trained model
+            self.class_names = self.model.names
         else:
             print(f"Loading base YOLOv8 model from {model_path}...")
             self.model = YOLO(model_path)

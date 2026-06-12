@@ -143,10 +143,22 @@ async def detect_garbage(file: UploadFile = File(...), description: str = Form(N
         # 2. Severity scoring
         # NOTE: The EfficientNet classifier head is untrained (random init), so its raw
         # output is not meaningful. We derive severity from the actual count of detected
-        # garbage objects, which varies per image and is defensible. The EfficientNet
-        # reasoning string is kept for display when the model is available.
+        # garbage objects, which varies per image and is defensible.
         results["severity"] = yolo_severity
         results["severity_reasoning"] = f"Estimated from {results.get('object_count', 0)} detected object(s)"
+
+        # Fallback for amorphous piles/dumps: the COCO detector localizes discrete
+        # objects (bottles, cups...) but sees nothing in a mixed trash heap, which
+        # would wrongly yield severity 0. If detection found no objects while the
+        # TrashNet classifier is confident the image IS garbage, scale severity from
+        # classification confidence instead (0.5 conf -> ~6, 0.95 conf -> ~8).
+        cls_conf = results.get("wasteClassConfidence", 0)
+        if results.get("object_count", 0) == 0 and cls_conf >= 0.5:
+            results["severity"] = min(10, round(3 + cls_conf * 5))
+            results["severity_reasoning"] = (
+                f"Bulk waste detected (classification confidence {cls_conf:.0%}); "
+                f"no individual objects localizable"
+            )
 
         # 3. Brand Detection (OCR)
         if brand_detector:
