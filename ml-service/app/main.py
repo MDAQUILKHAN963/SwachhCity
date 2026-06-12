@@ -147,9 +147,6 @@ async def detect_garbage(file: UploadFile = File(...), description: str = Form(N
         # reasoning string is kept for display when the model is available.
         results["severity"] = yolo_severity
         results["severity_reasoning"] = f"Estimated from {results.get('object_count', 0)} detected object(s)"
-        if severity_model:
-            sev_res = severity_model.predict(contents)
-            results["severity_reasoning"] = sev_res.get("reasoning", results["severity_reasoning"])
 
         # 3. Brand Detection (OCR)
         if brand_detector:
@@ -189,9 +186,6 @@ async def calculate_severity(file: UploadFile = File(...)):
             severity = yolo_res.get("severity_count_based", 0)
             count = yolo_res.get("object_count", 0)
             reasoning = f"Estimated from {count} detected object(s)"
-            if severity_model:
-                sev_res = severity_model.predict(contents)
-                reasoning = sev_res.get("reasoning", reasoning)
             return {"severity": severity, "reasoning": reasoning}
         return {"severity": 5, "reasoning": "Detector not loaded"}
     except Exception as e:

@@ -1,13 +1,15 @@
 import axios from 'axios';
+import FormData from 'form-data';
+import fs from 'fs';
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
+// 127.0.0.1 (not localhost): Node 18+ resolves localhost to ::1 first on Windows,
+// which fails when the ML service listens on IPv4 only.
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://127.0.0.1:8000';
 
 // Call ML service for garbage detection
 // `description` (optional) enables the ML semantic verification (text vs image consistency).
 export const detectGarbage = async (imagePath, description = null) => {
   try {
-    const FormData = require('form-data');
-    const fs = require('fs');
     const formData = new FormData();
 
     formData.append('file', fs.createReadStream(imagePath));
@@ -64,10 +66,8 @@ export const detectGarbage = async (imagePath, description = null) => {
 // Calculate severity score
 export const calculateSeverity = async (imagePath) => {
   try {
-    const FormData = require('form-data');
-    const fs = require('fs');
     const formData = new FormData();
-    
+
     formData.append('file', fs.createReadStream(imagePath));
 
     const response = await axios.post(
