@@ -22,3 +22,6 @@ trashnet_cls/
 train.err
 *.log
 .DS_Store
+
+ml_service.err
+ml_service.log

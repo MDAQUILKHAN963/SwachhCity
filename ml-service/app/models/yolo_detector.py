@@ -25,6 +25,11 @@ class YoloDetector:
             # COCO indices for garbage-related objects
             self.garbage_classes = [39, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 64, 67, 73, 77]
 
+        # The custom TACO detector is trained on scattered litter, so dense piles
+        # score lower confidence; use a lower threshold to recover those real
+        # detections. COCO keeps the standard threshold to avoid false positives.
+        self.conf_threshold = 0.15 if self.using_custom else 0.25
+
     def detect(self, image_bytes):
         """
         Run inference on an image.
@@ -33,8 +38,8 @@ class YoloDetector:
         try:
             nparr = np.frombuffer(image_bytes, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            
-            results = self.model(img)
+
+            results = self.model(img, conf=self.conf_threshold, verbose=False)
             
             detections = []
             max_confidence = 0.0
